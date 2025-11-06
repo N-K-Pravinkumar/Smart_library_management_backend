@@ -3,6 +3,7 @@ package com.wecodee.library.management.model;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDate;
@@ -10,6 +11,7 @@ import java.time.LocalDate;
 @Getter
 @Setter
 @AllArgsConstructor
+@NoArgsConstructor
 public class BorrowRecord {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
