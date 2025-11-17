@@ -15,18 +15,21 @@ import java.time.LocalDate;
 public class BorrowRecord {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    private long BorrowId;
+    private long borrowId;
 
     @ManyToOne
-    @JoinColumn(name = "studentId",nullable = false)
-    private long studentId;
+    @JoinColumn(name = "userId", nullable = false)
+    private User user;
 
     @ManyToOne
-    @JoinColumn(name = "bookId",nullable = false)
-    private long bookId;
-
+    @JoinColumn(name = "bookId", nullable = false)
+    private Book book;
     private LocalDate borrowDate;
     private LocalDate returnDate;
+    private int overDueDays;
     private double fine;
+    private  boolean pay;
+
+
 
 }

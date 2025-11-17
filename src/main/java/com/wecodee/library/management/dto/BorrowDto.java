@@ -15,4 +15,5 @@ public class BorrowDto {
     private LocalDate borrowDate;
     private LocalDate returnDate;
     private double fine;
+    private boolean pay;
 }
