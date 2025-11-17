@@ -18,15 +18,15 @@ public class BorrowRecord {
     private long BorrowId;
 
     @ManyToOne
-    @JoinColumn(name = "studentId",nullable = false)
-    private long studentId;
+    @JoinColumn(name = "studentId", nullable = false)
+    private User student;
 
     @ManyToOne
-    @JoinColumn(name = "bookId",nullable = false)
-    private long bookId;
-
+    @JoinColumn(name = "bookId", nullable = false)
+    private Book book;
     private LocalDate borrowDate;
     private LocalDate returnDate;
+    private int overDueDays;
     private double fine;
 
 }

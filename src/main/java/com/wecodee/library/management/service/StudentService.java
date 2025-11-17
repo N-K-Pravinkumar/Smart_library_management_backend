@@ -1,35 +1,41 @@
 package com.wecodee.library.management.service;
 
 import com.wecodee.library.management.dto.BookDto;
-import com.wecodee.library.management.dto.BorrowDto;
 import com.wecodee.library.management.model.Book;
 import com.wecodee.library.management.model.BorrowRecord;
+import com.wecodee.library.management.model.User;
 import com.wecodee.library.management.repository.BookRepository;
 import com.wecodee.library.management.repository.BorrowRepository;
+import com.wecodee.library.management.repository.AuthRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
 public class StudentService {
+
     @Autowired
     private BookRepository bookRepository;
+
     @Autowired
     private BorrowRepository borrowRepository;
-    public  List<BookDto> getListOfBook() {
-        return bookRepository.findByBorrowFalse()
+
+    @Autowired
+    private AuthRepository authRepository;
+
+    public List<BookDto> getListOfBook() {
+        return bookRepository.findAll()
                 .stream()
-                .filter(book -> !book.isBorrowed())
-                .map(this::convertToBookDto).collect(Collectors.toList());
+                .map(this::convertToBookDto)
+                .collect(Collectors.toList());
     }
 
     private BookDto convertToBookDto(Book book) {
-        BookDto dto=new BookDto();
+        BookDto dto = new BookDto();
         dto.setBookId(book.getBookId());
         dto.setBookName(book.getBookname());
         dto.setAuthor(book.getAuthor());
@@ -40,51 +46,56 @@ public class StudentService {
     }
 
     public String borrowBook(long bookId, long studentId) {
-        Book book=bookRepository.findById(bookId).orElseThrow(()-> new RuntimeException("Book not found with Id :"+bookId));
-        if(book.isBorrowed()){
-            return "Book is Borrowed by another Student";
+        Book book = bookRepository.findById(bookId)
+                .orElseThrow(() -> new RuntimeException("Book not found with Id: " + bookId));
+        if (book.isBorrowed()) {
+            return "Book is already borrowed by another student.";
         }
+
+        User student = authRepository.findById(studentId)
+                .orElseThrow(() -> new RuntimeException("Student not found with Id: " + studentId));
+
+        BorrowRecord record = new BorrowRecord();
+        record.setStudent(student);
+        record.setBook(book);
+        record.setBorrowDate(LocalDate.now());
+        record.setFine(0);
+
         book.setBorrowed(true);
         book.setReturned(false);
         bookRepository.save(book);
+        borrowRepository.save(record);
 
-        BorrowRecord record=new BorrowRecord();
-        record.setStudentId(studentId);
-        record.setBorrowDate(LocalDate.now());
-        record.setBookId(bookId);
-        record.setFine(0);
-
-        return "Book Borrowed Successfully";
-
+        return "Book borrowed successfully.";
     }
 
     public String returnBook(long bookId, long studentId) {
-        Book book=bookRepository.findById(bookId)
-                .orElseThrow(()->new RuntimeException("Book not found with id :"+bookId));
-        List<BorrowRecord> br=borrowRepository.findByStudentId(studentId);
-        BorrowRecord record=br.stream()
-                .filter(r-> (r.getBookId()==bookId) && r.getReturnDate()==null)
-                .findFirst()
-                .orElseThrow(()->new RuntimeException("No active borrow found for this book"));
-        book.setReturned(true);
-        book.setBorrowed(false);
-        bookRepository.save(book);
+        Book book = bookRepository.findById(bookId)
+                .orElseThrow(() -> new RuntimeException("Book not found with Id: " + bookId));
+
+        BorrowRecord record = borrowRepository
+                .findByBook_BookIdAndUserIdAndReturnDateIsNull(bookId, studentId)
+                .orElseThrow(() -> new RuntimeException("No active borrow found for this book."));
+
         record.setReturnDate(LocalDate.now());
-        long days= ChronoUnit.DAYS.between(record.getBorrowDate(), record.getReturnDate());
-        if (days>14) {
-            double fine=(days-14)*2;
-            record.setFine(fine);
-        }else {
+
+        long days = ChronoUnit.DAYS.between(record.getBorrowDate(), record.getReturnDate());
+        if (days > 10) {
+            record.setFine((days - 10) * 10);
+        } else {
             record.setFine(0);
         }
+
+        // Update book
+        book.setBorrowed(false);
+        book.setReturned(true);
+        bookRepository.save(book);
         borrowRepository.save(record);
-        return "Book return Successfully";
-    }
-    public List<BorrowRecord> getBorrowHistory(Long studentId) {
-        return borrowRepository.findByStudentId(studentId);
+
+        return "Book returned successfully.";
     }
 
-    public List<BorrowRecord> getAllBorrowRecords() {
-        return borrowRepository.findAll();
+    public List<BorrowRecord> getBorrowHistory(Long studentId) {
+        return borrowRepository.findByUserId(studentId);
     }
 }
