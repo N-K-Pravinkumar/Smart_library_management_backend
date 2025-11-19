@@ -23,6 +23,12 @@ public class Book {
 
     private String category;
 
+    @Column( nullable = false)
+    private int totalCopies;
+
+    @Column(nullable = false)
+    private int availableCopies;
+
     @Column(name = "IS_BORROWED")
     private boolean borrowed;
 

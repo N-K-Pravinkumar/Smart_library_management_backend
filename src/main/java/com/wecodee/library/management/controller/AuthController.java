@@ -30,7 +30,6 @@ public class AuthController {
             LoginResponse response = authService.login(request);
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
-            // Log the exception if needed
             System.out.println("Login failed: " + e.getMessage());
             return ResponseEntity.status(401).body(Map.of("message", e.getMessage()));
         }

@@ -11,6 +11,7 @@ public class BookDto {
     private String bookName;
     private String author;
     private String category;
+    private int availableCopies;
     private boolean borrowed;
     private boolean returned;
 

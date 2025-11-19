@@ -25,6 +25,7 @@ public class LibBookService {
 
     public LibBookDto addBook(LibBookDto dto) {
         Book book = dto.toEntity();
+        book.setAvailableCopies(dto.getTotalCopies());
         bookRepository.save(book);
         return LibBookDto.fromEntity(book);
     }
@@ -37,6 +38,15 @@ public class LibBookService {
         book.setCategory(dto.getCategory());
         book.setBorrowed(dto.isBorrowed());
         book.setReturned(dto.isReturned());
+        book.setTotalCopies(dto.getTotalCopies());
+
+        if (dto.getAvailableCopies() <= dto.getTotalCopies()) {
+            book.setAvailableCopies(dto.getAvailableCopies());
+        } else {
+            book.setAvailableCopies(dto.getTotalCopies());
+        }
+
+        book.setBorrowed(book.getAvailableCopies() == 0);
         bookRepository.save(book);
         return LibBookDto.fromEntity(book);
     }

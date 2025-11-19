@@ -27,7 +27,6 @@ public class BookController {
     @Autowired
     private UserRepository userRepo;
 
-    // ✅ Get all books
     @GetMapping
     public List<Map<String, Object>> getAllBooks() {
         List<Book> books = bookRepo.findAll();
@@ -39,7 +38,9 @@ public class BookController {
             map.put("bookName", book.getBookName());
             map.put("author", book.getAuthor());
             map.put("category", book.getCategory());
-            map.put("borrowed", book.isBorrowed());
+            map.put("availableCopies", book.getAvailableCopies());
+            map.put("totalCopies", book.getTotalCopies());
+            map.put("borrowed", book.getAvailableCopies() == 0);  // calculated dynamically
             response.add(map);
         }
 
@@ -48,8 +49,8 @@ public class BookController {
 
     @PostMapping("/borrow")
     public ResponseEntity<?> borrowBook(@RequestParam Long studentId, @RequestParam Long bookId) {
+
         try {
-            // Check student borrow limit
             long activeBorrows = borrowRepo.countByUser_UserIdAndReturnDateIsNull(studentId);
             if (activeBorrows >= 3) {
                 throw new RuntimeException("You can only borrow up to 3 books at a time!");
@@ -58,8 +59,9 @@ public class BookController {
             Book book = bookRepo.findById(bookId)
                     .orElseThrow(() -> new RuntimeException("Book not found"));
 
-            if (book.isBorrowed()) {
-                throw new RuntimeException("Book is currently unavailable!");
+            // Correct check
+            if (book.getAvailableCopies() <= 0) {
+                throw new RuntimeException("No copies available!");
             }
 
             User user = userRepo.findById(studentId)
@@ -74,24 +76,23 @@ public class BookController {
             borrow.setPay(false);
             borrowRepo.save(borrow);
 
-            // Update book status
-            book.setBorrowed(true);
-            book.setReturned(false);
+            // Update count
+            book.setAvailableCopies(book.getAvailableCopies() - 1);
             bookRepo.save(book);
 
             return ResponseEntity.ok(Map.of(
-                    "message", "Book borrowed successfully and return within 14 days",
-                    "bookId", book.getBookId(),
-                    "borrowed", book.isBorrowed()
+                    "message", "Book borrowed successfully — Return within 2 days",
+                    "availableCopies", book.getAvailableCopies()
             ));
+
         } catch (RuntimeException ex) {
             return ResponseEntity.badRequest().body(Map.of("message", ex.getMessage()));
         }
     }
 
-    // ✅ Return a book
     @PutMapping("/return/{bookId}")
     public ResponseEntity<?> returnBook(@PathVariable Long bookId, @RequestParam Long studentId) {
+
         try {
             BorrowRecord borrow = borrowRepo
                     .findByUser_UserIdAndBook_BookIdAndReturnDateIsNull(studentId, bookId)
@@ -101,20 +102,19 @@ public class BookController {
             borrowRepo.save(borrow);
 
             Book book = borrow.getBook();
-            book.setBorrowed(false);
-            book.setReturned(true);
+
+            book.setAvailableCopies(book.getAvailableCopies() + 1);
             bookRepo.save(book);
 
             return ResponseEntity.ok(Map.of(
                     "message", "Book returned successfully",
-                    "borrowed", book.isBorrowed()
+                    "availableCopies", book.getAvailableCopies()
             ));
+
         } catch (RuntimeException ex) {
             return ResponseEntity.badRequest().body(Map.of("message", ex.getMessage()));
         }
     }
-
-    // ✅ Get number of books currently borrowed by student
     @GetMapping("/borrowed/count/{studentId}")
     public ResponseEntity<?> getBorrowedCount(@PathVariable Long studentId) {
         long count = borrowRepo.countByUser_UserIdAndReturnDateIsNull(studentId);

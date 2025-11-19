@@ -22,6 +22,7 @@ public class BookService {
         book.setCategory(dto.getCategory());
         book.setBorrowed(dto.isBorrowed());
         book.setReturned(dto.isReturned());
+        book.setAvailableCopies(dto.getAvailableCopies());
         Book saved = bookRepository.save(book);
         return convertToDto(saved);
     }
@@ -49,7 +50,7 @@ public class BookService {
     }
 
     private BookDto convertToDto(Book b) {
-        return new BookDto(b.getBookId(), b.getBookName(), b.getAuthor(), b.getCategory(), b.isBorrowed(), b.isReturned());
+        return new BookDto(b.getBookId(), b.getBookName(), b.getAuthor(), b.getCategory(),b.getAvailableCopies(),b.isBorrowed(), b.isReturned());
     }
 
 }

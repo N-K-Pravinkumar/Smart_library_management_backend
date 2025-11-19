@@ -14,8 +14,8 @@ public class DashboardService {
     private final BookRepository bookRepository;
     private final BorrowRepository borrowRepository;
 
-    public DashboardSummaryDTO getDashboardSummary() {
-        long totalBooks = bookRepository.count();
+     public DashboardSummaryDTO getDashboardSummary() {
+        long totalBooks = bookRepository.getTotalAvailableBooks();
         var records = borrowRepository.findAll();
         System.out.println("Books: " + bookRepository.count());
         System.out.println("Records: " + borrowRepository.findAll().size());
